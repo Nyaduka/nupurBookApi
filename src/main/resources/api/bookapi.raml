@@ -1,0 +1,96 @@
+#%RAML 1.0
+title: BookAPI
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/24b0e7aa-94ab-4ec8-9f94-dacc8ac5f956/ # baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/73633fce-6bff-480d-8652-6d3618ceccf8
+version: v1
+/user:
+  /authors:
+    description: This used to get authors details
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                "Author_Id":1,
+                "Author_Name":"Robert",
+                "DOB":"21/04/1986",
+                "Age":30
+                }
+                
+    post:
+      body:
+        application/json:
+          example: |
+            {
+            "Author_Id":2,
+            "Author_Name":"Stephan",
+            "DOB":"21/04/1986",
+            "Age":30
+            }
+      responses:
+        201:
+          body:
+            application/json:
+              example: |
+                {
+                "message":"Äuthor updated"
+                }
+                
+            
+  
+           
+  
+  /books:
+    get:
+    /{bookTitle}:
+      get:
+        queryParameters:
+          author:
+            displayName: Author
+            description: Name of the author
+            type: string
+            required: true
+            example: Mary Roach                          
+          publicationYear:
+            displayName: Published Year
+            description: The year the book was published
+            type: number
+            required: true
+            example: 2018              
+          rating:
+            displayName: Rating
+            description: Average rating
+            type: number
+            required: false
+            example: 3.5              
+          isbn:
+            displayName: ISBN
+            description: ISBN number
+            type: number
+            required: false
+            example: 0321789456       
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                  {
+                    "data": {
+                      "id": "SbBGk",
+                      "title": "Stiff",
+                      "description": null,
+                      "datetime": 1341533193,
+                      "genre": "science",
+                      "author": "Mary Roach",
+                      "link": "http://e-bookmobile.com/books/Stiff"
+                    },
+                  "success": true,
+                  "status": 200
+                  }
+        
+
+
+          
+      
+  
