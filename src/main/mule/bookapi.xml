@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
     <http:listener-config name="bookapi-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="8081" />
+        <http:listener-connection host="0.0.0.0" port="8088" />
     </http:listener-config>
     <apikit:config name="bookapi-config" raml="bookapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <db:config name="Database_Config" doc:name="Database Config" doc:id="248a0a67-7623-4d58-bbac-d8ba1f67f3d8" >
@@ -124,8 +125,8 @@ output application/json
             </on-error-propagate>
         </error-handler>
     </flow>
-    <flow name="get:\user\authors:bookapi-config">
-		<logger level="INFO" doc:name="Logger" doc:id="ca01cacd-9252-4444-a5fa-4ecd1e17a566" message="#[payload]"/>
+	<flow name="get:\user\authors:bookapi-config">
+		<logger level="INFO" doc:name="Logger" doc:id="ca01cacd-9252-4444-a5fa-4ecd1e17a566" message="in getUserByAuthor"/>
 		<db:select doc:name="Author" doc:id="72b78d5c-233b-47e3-9fa4-143e02f25c12" config-ref="Database_Config">
 			<db:sql >select * from Author</db:sql>
 		</db:select>
@@ -139,7 +140,7 @@ payload]]></ee:set-payload>
 		</ee:transform>
     </flow>
     <flow name="get:\user\books:bookapi-config">
-        <logger level="INFO" message="get:\user\books:bookapi-config" />
+        <logger level="INFO" message="I am in - get:\user\books:bookapi-config" />
 		<db:select doc:name="Book" doc:id="da73ad0a-2b5c-438d-be57-ec159d369d02" config-ref="Database_Config" >
 			<db:sql >select * from Book_Details</db:sql>
 		</db:select>
@@ -151,33 +152,64 @@ output application/json
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bb9265ff-a74f-4292-be96-fecd5fa4adeb" type="DB:QUERY_EXECUTION">
+				<ee:transform doc:name="Transform Message" doc:id="0f1b8646-369a-4ea1-8183-a1f7ea092a93" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"This is in Continue: " ++ (error.description default "")
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
     </flow>
     <flow name="get:\user\books\(bookTitle):bookapi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:id="aa00f1c6-4ac2-4341-aa50-897f7fbec0e8">
-            <ee:variables>
-                <ee:set-variable variableName="bookTitle"><![CDATA[attributes.uriParams.bookTitle]]></ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="a6f82fcc-b636-45fc-b9f7-fc59841b149a">
+		<logger level="INFO" doc:name="Logger" doc:id="cb06042c-0aac-4fc1-b07c-d41b4b0859a7" message="I AM HERE"/>
+		<set-variable value="#[attributes.queryParams.author default 'Not Found']" doc:name="Set Author" doc:id="1d9cf607-59a6-4f7a-83f8-c6d3553cea06" variableName="author"/>
+		<set-variable value="#[attributes.uriParams.bookTitle default 'Not Found']" doc:name="Set Book Title" doc:id="7a53b7b3-0449-46b0-b529-a3a6e85402c0" variableName="title" />
+		<db:select doc:name="GetByTitle" doc:id="09399a13-a1c6-4edf-b226-4e50c89fc9b8" config-ref="Database_Config">
+			<db:sql >select * from book_details where Book_Title= :booktitle</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	booktitle:vars.title
+}]]]></db:input-parameters>
+		</db:select>
+		<set-variable value="#[payload]" doc:name="SetTitlePayload" doc:id="e06b0317-4846-40e4-8aab-77b5388bf6e9" variableName="titleResultset"/>
+		<choice doc:name="Choice" doc:id="5889040f-e5c1-415a-bfc6-397510feda53" >
+			<when expression="#[isEmpty(vars.titleResultset)]">
+				<db:select doc:name="GetByAuthor" doc:id="56f8f68b-2a80-49bc-b9db-14a3e672e566" config-ref="Database_Config">
+					<db:sql>select * from book_details where Author_Name= :author</db:sql>
+					<db:input-parameters><![CDATA[#[{
+	author:vars.author
+}]]]></db:input-parameters>
+				</db:select>
+			</when>
+		</choice>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="a6f82fcc-b636-45fc-b9f7-fc59841b149a">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-{
-  data: {
-    id: "SbBGk",
-    title: "Stiff",
-    description: null,
-    datetime: 1341533193,
-    genre: "science",
-    author: "Mary Roach",
-    link: "http://e-bookmobile.com/books/Stiff"
-  },
-  success: true,
-  status: 200
-}]]></ee:set-payload>
+payload]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a757c524-0145-44a4-9ef2-0977e6382459" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="e65bdf0f-a4c9-41d1-b9bf-68329a5d7e2c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
     </flow>
     <flow name="post:\user\authors:bookapi-config">
 		<ee:transform doc:name="Transform Message" doc:id="e5d4605a-e6e9-4f04-a60d-ee7748cb2f00" >
@@ -200,7 +232,7 @@ output application/json
                    )
                    VALUES (Author_Id,Author_Name,DOB,Age);</db:sql>
 			<db:input-parameters ><![CDATA[#[{
-	Author_Id:payload.Author_ID,
+	Author_Id:payload.Author_Id,
 	Author_Name:payload.Author_Name,
 	DOB:payload.DOB,
 	Age:payload.Age
